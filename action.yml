@@ -14,6 +14,10 @@ inputs:
     description: Head Git revision or commit.
     required: false
     default: HEAD
+  repo:
+    description: Repository directory to scan.
+    required: false
+    default: .
   fail-on-findings:
     description: Fail the step when review findings exist.
     required: false
@@ -34,9 +38,10 @@ runs:
       env:
         ALTRECHECK_BASE: ${{ inputs.base }}
         ALTRECHECK_HEAD: ${{ inputs.head }}
+        ALTRECHECK_REPO: ${{ inputs.repo }}
         ALTRECHECK_FAIL: ${{ inputs.fail-on-findings }}
       run: |
-        args=(--base "$ALTRECHECK_BASE" --head "$ALTRECHECK_HEAD" --format github)
+        args=(--repo "$ALTRECHECK_REPO" --base "$ALTRECHECK_BASE" --head "$ALTRECHECK_HEAD" --format github)
         if [[ "${ALTRECHECK_FAIL,,}" == "false" ]]; then
           args+=(--no-fail)
         fi

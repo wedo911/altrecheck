@@ -22,3 +22,34 @@ jobs:
       - run: pytest
       - run: ruff check .
       - run: python -m build --wheel
+
+  action-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create a two-revision accessibility fixture
+        shell: bash
+        run: |
+          fixture="$RUNNER_TEMP/altrecheck-fixture"
+          mkdir -p "$fixture"
+          cd "$fixture"
+          git init -b main
+          git config user.name "AltRecheck CI"
+          git config user.email "ci@example.org"
+          printf 'first image' > hero.png
+          printf '<img src="hero.png" alt="A sunrise">\n' > index.html
+          git add .
+          git commit -m base
+          echo "ALTRECHECK_BASE=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          printf 'different image' > hero.png
+          git add hero.png
+          git commit -m replacement
+          echo "ALTRECHECK_HEAD=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          echo "ALTRECHECK_FIXTURE=$fixture" >> "$GITHUB_ENV"
+      - name: Run the local composite action
+        uses: ./
+        with:
+          repo: ${{ env.ALTRECHECK_FIXTURE }}
+          base: ${{ env.ALTRECHECK_BASE }}
+          head: ${{ env.ALTRECHECK_HEAD }}
+          fail-on-findings: "false"
