@@ -1,0 +1,43 @@
+name: AltRecheck
+description: Flag changed images whose alternative text was not reviewed.
+author: AltRecheck contributors
+
+branding:
+  icon: eye
+  color: purple
+
+inputs:
+  base:
+    description: Base Git revision or commit.
+    required: true
+  head:
+    description: Head Git revision or commit.
+    required: false
+    default: HEAD
+  fail-on-findings:
+    description: Fail the step when review findings exist.
+    required: false
+    default: "true"
+  python-version:
+    description: Python version used to run the dependency-free scanner.
+    required: false
+    default: "3.12"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v7
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Compare changed images and alt text
+      shell: bash
+      env:
+        ALTRECHECK_BASE: ${{ inputs.base }}
+        ALTRECHECK_HEAD: ${{ inputs.head }}
+        ALTRECHECK_FAIL: ${{ inputs.fail-on-findings }}
+      run: |
+        args=(--base "$ALTRECHECK_BASE" --head "$ALTRECHECK_HEAD" --format github)
+        if [[ "${ALTRECHECK_FAIL,,}" == "false" ]]; then
+          args+=(--no-fail)
+        fi
+        PYTHONPATH="$GITHUB_ACTION_PATH/src" python -m altrecheck "${args[@]}"
